@@ -12,6 +12,7 @@ import csv
 import Adafruit_LSM303
 import RPi.GPIO as GPIO
 from time import sleep
+import serial
 
 GPIO.setmode(GPIO.BOARD)
 
@@ -75,6 +76,14 @@ if __name__ == '__main__':
 
   lat_long = [[float(float(j)) for j in i] for i in lat_long]
 
+  ser = serial.Serial(
+    port='/dev/ttyACM0',
+    baudrate = 9600,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+  )
+
   try:
     gpsp.start() # start it up
     for list in lat_long:
@@ -91,11 +100,16 @@ if __name__ == '__main__':
         if az < 0:
           az = 360 + az
         print 'Degree: ', az
+        x = ser.readline()
 
-        print "%2.8f,%2.8f" % (gpsd.fix.latitude, gpsd.fix.longitude)
+        print "%2.8f,%2.8f" % (gpsd.fix.latitude, gpsd.fix.longitude) + x
         degree_to_turn = (getDegrees(gpsd.fix.latitude, gpsd.fix.longitude, input_lat, input_long, az))
         print(degree_to_turn)
-        if gpsd.fix.latitude == input_lat and gpsd.fix.long == input_longitude:
+        our_lat = round(gpsd.fix.latitude, 5)
+        our_long = round(gpsd.fix.long, 5)
+        in_lat = round(input_lat, 5)
+        in_long = round(input_long, 5)
+        if our_lat == in_lat and our_long == in_long:
           latlong_bool = False
           break
         elif degree_to_turn <= 15 and degree_to_turn >= -15 :
@@ -125,7 +139,7 @@ if __name__ == '__main__':
           GPIO.output(Right5,GPIO.LOW)
           GPIO.output(MotorEn2,GPIO.HIGH)
           sleep (3)
-        elif  :
+        else :
           print"STOP"
           GPIO.output(MotorEn1,GPIO.LOW)
           GPIO.output(MotorEn2,GPIO.LOW)
